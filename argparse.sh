@@ -15,7 +15,6 @@ is_ipv4() {
     [[ $1 =~ $re ]]
 }
 
-
 parse_args() {
     local -n arg_definitions=$1
     local -n arg_outputs=$2
@@ -56,7 +55,7 @@ parse_args() {
             for a in "$@"; do
                 if (( read_next > 0 )); then
                     read_values+=( "$a" )
-                    arg_outputs[$key]=${read_values[*]}
+                    arg_outputs[$key]+=${read_values[*]}
                     (( read_next-- || 0 ))
                     continue
                 fi
@@ -72,8 +71,7 @@ parse_args() {
         if [[ "$required" == "required" ]] && \
            ! [[ "${arg_outputs[$key]}" ]]; then
             errors+=( "${opts_str} is required" )
-        fi
-        if ! ${validator:-:} "${arg_outputs[$key]}"; then
+        elif ! ${validator:-:} "${arg_outputs[$key]}"; then
             errors+=( "${opts_str} validation failed ($validator)" )
         fi
     done
@@ -82,7 +80,7 @@ parse_args() {
         echo -e "$usage_options"
     fi
     if (( ${#errors} )); then
-        echo "${errors[@]}"
+        printf "%s\n" "${errors[@]}"
         exit 1
     fi
 
@@ -90,17 +88,3 @@ parse_args() {
 
 # todo:
 # consumed multiple times?
-
-declare -A definitions=(
-    ["foo"]="-f|--foo;required;1;is_integer;help"
-    ["verbose"]="-v;optional;0;;help"
-)
-
-declare -A outputs=()
-
-parse_args definitions outputs "$0" "$@"
-export definitions
-
-for k in "${!outputs[@]}"; do
-    echo "$k=${outputs[$k]}"
-done
